@@ -2,87 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Warm oud-inspired palette */
+    --background: 39 32% 96%;
+    --foreground: 25 35% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 39 35% 93%;
+    --card-foreground: 25 35% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 39 35% 95%;
+    --popover-foreground: 25 35% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Warm amber/brown primary */
+    --primary: 25 60% 35%;
+    --primary-foreground: 39 30% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Parchment secondary */
+    --secondary: 39 25% 88%;
+    --secondary-foreground: 25 35% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted tones */
+    --muted: 35 20% 90%;
+    --muted-foreground: 25 15% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Gold accent */
+    --accent: 42 85% 50%;
+    --accent-foreground: 25 35% 12%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Success green */
+    --success: 142 70% 40%;
+    --success-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --border: 35 25% 82%;
+    --input: 35 25% 85%;
+    --ring: 25 60% 40%;
+
+    --radius: 0.75rem;
+
+    /* Custom oud colors */
+    --oud-wood: 25 55% 28%;
+    --oud-wood-light: 30 45% 42%;
+    --oud-neck: 25 50% 22%;
+    --oud-string: 42 30% 65%;
+    --oud-rosette: 42 75% 55%;
+    --staff-line: 25 30% 25%;
+    --note-head: 25 40% 18%;
+    --parchment: 42 35% 94%;
+    --parchment-dark: 38 30% 88%;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 25 30% 8%;
+    --foreground: 39 25% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 25 28% 12%;
+    --card-foreground: 39 25% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 25 28% 10%;
+    --popover-foreground: 39 25% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 42 70% 55%;
+    --primary-foreground: 25 35% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 25 25% 18%;
+    --secondary-foreground: 39 25% 90%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 25 20% 15%;
+    --muted-foreground: 35 15% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 42 80% 50%;
+    --accent-foreground: 25 35% 10%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --success: 142 60% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 25 25% 20%;
+    --input: 25 25% 18%;
+    --ring: 42 70% 50%;
+
+    --oud-wood: 25 45% 35%;
+    --oud-wood-light: 30 40% 45%;
+    --oud-neck: 25 40% 25%;
+    --oud-string: 42 35% 70%;
+    --oud-rosette: 42 70% 60%;
+    --staff-line: 35 20% 70%;
+    --note-head: 35 25% 80%;
+    --parchment: 30 20% 15%;
+    --parchment-dark: 28 18% 12%;
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -100,6 +125,74 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Crimson Pro', Georgia, serif;
+  }
+}
+
+@layer components {
+  .musical-text {
+    font-family: 'Crimson Pro', Georgia, serif;
+  }
+
+  .oud-shadow {
+    filter: drop-shadow(0 8px 24px hsl(25 40% 20% / 0.25));
+  }
+
+  .note-glow {
+    filter: drop-shadow(0 0 8px hsl(42 85% 50% / 0.6));
+  }
+
+  .string-hover {
+    transition: stroke-width 0.15s ease, filter 0.15s ease;
+  }
+
+  .string-hover:hover {
+    stroke-width: 3px;
+    filter: drop-shadow(0 0 4px hsl(42 75% 55% / 0.8));
+  }
+}
+
+@layer utilities {
+  .animate-note-correct {
+    animation: noteCorrect 0.4s ease-out;
+  }
+
+  .animate-note-shake {
+    animation: noteShake 0.4s ease-out;
+  }
+
+  .animate-note-slide {
+    animation: noteSlide 0.3s ease-out;
+  }
+
+  .animate-tap-ripple {
+    animation: tapRipple 0.3s ease-out;
+  }
+
+  @keyframes noteCorrect {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); filter: drop-shadow(0 0 12px hsl(142 70% 50% / 0.8)); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes noteShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+
+  @keyframes noteSlide {
+    0% { transform: translateX(100px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes tapRipple {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
   }
 }
