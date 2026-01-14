@@ -155,17 +155,18 @@ export function getNotesInRange(lowNote: Note, highNote: Note): Note[] {
   return notes;
 }
 
-// Get staff position for a note (relative to middle line B4)
+// Get staff position for a note (relative to middle line B3)
 // Returns number of steps from middle line (positive = up, negative = down)
+// This places E3 on the bottom line, suitable for oud range
 export function getStaffPosition(note: Note): number {
-  // B4 is on the middle line of treble clef
+  // B3 is on the middle line (octave-transposed treble clef for oud)
   // Each step is a line or space
   const noteIndex = LETTER_ORDER.indexOf(note.letter);
-  const b4Index = LETTER_ORDER.indexOf('B');
+  const b3Index = LETTER_ORDER.indexOf('B');
   
-  // Calculate position relative to B4
-  const octaveDiff = note.octave - 4;
-  const letterDiff = noteIndex - b4Index;
+  // Calculate position relative to B3
+  const octaveDiff = note.octave - 3;
+  const letterDiff = noteIndex - b3Index;
   
   return octaveDiff * 7 + letterDiff;
 }
