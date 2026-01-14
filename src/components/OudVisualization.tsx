@@ -28,6 +28,7 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
   const [hintsEnabled, setHintsEnabled] = useState(false);
   const [ripples, setRipples] = useState<TapRipple[]>([]);
   const [activeString, setActiveString] = useState<number | null>(null);
+  const [lastPlayedNote, setLastPlayedNote] = useState<Note | null>(null);
   const rippleIdRef = useRef(0);
   const svgRef = useRef<SVGSVGElement>(null);
   
@@ -95,6 +96,9 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
     
     // Play the sound
     audioEngine.playNote(playedNote);
+    
+    // Set the last played note for display
+    setLastPlayedNote(playedNote);
     
     // Add ripple effect
     const rippleId = ++rippleIdRef.current;
@@ -176,23 +180,35 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
           </Tooltip>
         </div>
         
-        <div className="text-sm text-muted-foreground flex gap-4">
-          <Tooltip>
-            <TooltipTrigger className="cursor-help">
-              <span className="underline decoration-dotted">← Fingerboard</span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Tap here to play different notes based on position</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger className="cursor-help">
-              <span className="underline decoration-dotted">Bowl (open string) →</span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Tap here to play the open string note</p>
-            </TooltipContent>
-          </Tooltip>
+        {/* Last played note display */}
+        <div className="flex items-center gap-4">
+          {lastPlayedNote && (
+            <div className="bg-accent/20 border border-accent rounded-lg px-4 py-2 flex items-center gap-2 animate-in fade-in duration-200">
+              <span className="text-sm text-muted-foreground">Played:</span>
+              <span className="text-lg font-bold text-accent">
+                {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
+              </span>
+            </div>
+          )}
+          
+          <div className="text-sm text-muted-foreground flex gap-4">
+            <Tooltip>
+              <TooltipTrigger className="cursor-help">
+                <span className="underline decoration-dotted">← Fingerboard</span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Tap here to play different notes based on position</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger className="cursor-help">
+                <span className="underline decoration-dotted">Bowl (open string) →</span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Tap here to play the open string note</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
       
