@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MusicStaff } from '@/components/MusicStaff';
+import { MusicStaffCompact } from '@/components/MusicStaffCompact';
 import { OudVisualization } from '@/components/OudVisualization';
+import { OudVisualizationCompact } from '@/components/OudVisualizationCompact';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { Settings, loadSettings, saveSettings } from '@/lib/settings';
 import { Note, notesEqual, randomNoteInRange } from '@/lib/noteUtils';
 import { audioEngine } from '@/lib/audioEngine';
-import { Music, Volume2, VolumeX } from 'lucide-react';
+import { Music, Volume2, VolumeX, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface TargetNote {
   note: Note;
@@ -21,6 +24,8 @@ function Index() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState({ correct: 0, incorrect: 0 });
   const [isMuted, setIsMuted] = useState(false);
+  const [isLandscapeMode, setIsLandscapeMode] = useState(false);
+  const [lastPlayedNote, setLastPlayedNote] = useState<Note | null>(null);
   
   // Initialize target notes
   useEffect(() => {
@@ -51,7 +56,6 @@ function Index() {
     const isCorrect = notesEqual(playedNote, currentTargetNote.note);
     
     if (isCorrect) {
-      // Mark as correct
       setTargetNotes(prev => {
         const updated = [...prev];
         updated[currentIndex] = { ...updated[currentIndex], status: 'correct' };
@@ -64,10 +68,8 @@ function Index() {
         audioEngine.playSuccess();
       }
       
-      // After a short delay, advance and add new note
       setTimeout(() => {
         setTargetNotes(prev => {
-          // Remove first note, shift left, add new at end
           const remaining = prev.slice(1);
           const newNote: TargetNote = {
             note: randomNoteInRange(settings.lowestNote, settings.highestNote, settings.includeAccidentals),
@@ -77,14 +79,12 @@ function Index() {
           return [...remaining, newNote];
         });
         
-        // Clear isNew flag after animation
         setTimeout(() => {
           setTargetNotes(prev => prev.map(n => ({ ...n, isNew: false })));
         }, 300);
       }, 400);
       
     } else {
-      // Mark as incorrect (temporarily)
       setTargetNotes(prev => {
         const updated = [...prev];
         updated[currentIndex] = { ...updated[currentIndex], status: 'incorrect' };
@@ -97,7 +97,6 @@ function Index() {
         audioEngine.playError();
       }
       
-      // Reset to pending after shake animation
       setTimeout(() => {
         setTargetNotes(prev => {
           const updated = [...prev];
@@ -121,9 +120,73 @@ function Index() {
   const handleReset = () => {
     generateNewNotes();
     setScore({ correct: 0, incorrect: 0 });
+    setLastPlayedNote(null);
     toast.success('New practice session started!');
   };
+
+  const toggleLandscapeMode = () => {
+    setIsLandscapeMode(!isLandscapeMode);
+    toast(isLandscapeMode ? 'Standard mode' : 'Landscape mode enabled');
+  };
+
+  // Landscape mode layout
+  if (isLandscapeMode) {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
+        {/* Minimal header */}
+        <header className="h-10 flex-shrink-0 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-3">
+          <div className="flex items-center gap-2">
+            <Music className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Oud Trainer</span>
+            <span className="text-xs text-success ml-2">✓ {score.correct}</span>
+            <span className="text-xs text-destructive">✗ {score.incorrect}</span>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 text-xs px-2">
+              New
+            </Button>
+            <Button variant="outline" size="icon" onClick={toggleMute} className="h-7 w-7">
+              {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+            </Button>
+            <Button 
+              variant="default" 
+              size="icon" 
+              onClick={toggleLandscapeMode} 
+              className="h-7 w-7"
+            >
+              <Smartphone className="h-3 w-3" />
+            </Button>
+            <SettingsPanel settings={settings} onSettingsChange={handleSettingsChange} />
+          </div>
+        </header>
+        
+        {/* Main content - horizontal split */}
+        <main className="flex-1 flex min-h-0">
+          {/* Music staff - 20% */}
+          <section className="w-[20%] flex-shrink-0 p-2 border-r border-border">
+            <MusicStaffCompact 
+              targetNotes={targetNotes}
+              currentIndex={currentIndex}
+              notationSystem={settings.notationSystem}
+            />
+          </section>
+          
+          {/* Oud - 80% (75% oud + 5% right panel handled inside) */}
+          <section className="flex-1 p-2">
+            <OudVisualizationCompact 
+              settings={settings} 
+              onNotePlayed={handleNotePlayed}
+              lastPlayedNote={lastPlayedNote}
+              onLastPlayedNoteChange={setLastPlayedNote}
+            />
+          </section>
+        </main>
+      </div>
+    );
+  }
   
+  // Standard layout
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -145,6 +208,16 @@ function Index() {
               <span className="text-success font-medium">✓ {score.correct}</span>
               <span className="text-destructive font-medium">✗ {score.incorrect}</span>
             </div>
+            
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={toggleLandscapeMode} 
+              className="h-10 w-10"
+              title="Landscape mode"
+            >
+              <Smartphone className="h-5 w-5" />
+            </Button>
             
             <Button variant="outline" size="icon" onClick={toggleMute} className="h-10 w-10">
               {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
