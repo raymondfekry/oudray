@@ -25,7 +25,7 @@ function Index() {
   // Initialize target notes
   useEffect(() => {
     generateNewNotes();
-  }, [settings.notesPerLine, settings.lowestNote, settings.highestNote]);
+  }, [settings.notesPerLine, settings.lowestNote, settings.highestNote, settings.includeAccidentals]);
   
   // Save settings to localStorage
   useEffect(() => {
@@ -36,13 +36,13 @@ function Index() {
     const notes: TargetNote[] = [];
     for (let i = 0; i < settings.notesPerLine; i++) {
       notes.push({
-        note: randomNoteInRange(settings.lowestNote, settings.highestNote),
+        note: randomNoteInRange(settings.lowestNote, settings.highestNote, settings.includeAccidentals),
         status: 'pending',
       });
     }
     setTargetNotes(notes);
     setCurrentIndex(0);
-  }, [settings.notesPerLine, settings.lowestNote, settings.highestNote]);
+  }, [settings.notesPerLine, settings.lowestNote, settings.highestNote, settings.includeAccidentals]);
   
   const handleNotePlayed = useCallback((playedNote: Note) => {
     if (currentIndex >= targetNotes.length) return;
@@ -70,7 +70,7 @@ function Index() {
           // Remove first note, shift left, add new at end
           const remaining = prev.slice(1);
           const newNote: TargetNote = {
-            note: randomNoteInRange(settings.lowestNote, settings.highestNote),
+            note: randomNoteInRange(settings.lowestNote, settings.highestNote, settings.includeAccidentals),
             status: 'pending',
             isNew: true,
           };
@@ -106,7 +106,7 @@ function Index() {
         });
       }, 400);
     }
-  }, [currentIndex, targetNotes, isMuted, settings.lowestNote, settings.highestNote]);
+  }, [currentIndex, targetNotes, isMuted, settings.lowestNote, settings.highestNote, settings.includeAccidentals]);
   
   const handleSettingsChange = useCallback((newSettings: Settings) => {
     setSettings(newSettings);

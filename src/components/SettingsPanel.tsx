@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Settings, DEFAULT_SETTINGS, validateNoteRange, getAllNotes } from '@/lib/settings';
 import { Note, NotationSystem, formatNote, noteToMidi } from '@/lib/noteUtils';
 import { Settings as SettingsIcon, RotateCcw } from 'lucide-react';
@@ -77,6 +78,10 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
   
   const handleNotesPerLineChange = (value: string) => {
     onSettingsChange({ ...settings, notesPerLine: parseInt(value) });
+  };
+  
+  const handleAccidentalsChange = (checked: boolean) => {
+    onSettingsChange({ ...settings, includeAccidentals: checked });
   };
   
   const handleReset = () => {
@@ -234,6 +239,19 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          
+          {/* Include Accidentals */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="accidentals-switch">Include Sharps & Flats</Label>
+              <p className="text-sm text-muted-foreground">Add ♯ and ♭ notes to practice</p>
+            </div>
+            <Switch
+              id="accidentals-switch"
+              checked={settings.includeAccidentals}
+              onCheckedChange={handleAccidentalsChange}
+            />
           </div>
           
           <Separator />

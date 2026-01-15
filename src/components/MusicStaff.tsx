@@ -74,6 +74,25 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
           />
         ))}
         
+        {/* Accidental symbol (sharp or flat) */}
+        {note.accidental && (
+          <text
+            x={noteX - 20}
+            y={noteY + 6}
+            className={cn(
+              'font-bold transition-all duration-200',
+              isCurrent && status === 'pending' && 'fill-accent',
+              status === 'correct' && 'fill-success',
+              status === 'incorrect' && 'fill-destructive',
+              !isCurrent && status === 'pending' && 'fill-staff-note'
+            )}
+            fontSize={18}
+            textAnchor="middle"
+          >
+            {note.accidental === '#' ? '♯' : '♭'}
+          </text>
+        )}
+        
         {/* Note head (ellipse) */}
         <ellipse
           cx={noteX}
