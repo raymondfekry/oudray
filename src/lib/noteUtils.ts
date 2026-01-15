@@ -135,11 +135,23 @@ export function notesEqual(a: Note, b: Note): boolean {
 }
 
 // Generate a random note within a range (inclusive)
-export function randomNoteInRange(lowNote: Note, highNote: Note): Note {
+// If includeAccidentals is false, only return natural notes (no sharps/flats)
+export function randomNoteInRange(lowNote: Note, highNote: Note, includeAccidentals: boolean = true): Note {
   const lowMidi = noteToMidi(lowNote);
   const highMidi = noteToMidi(highNote);
-  const randomMidi = lowMidi + Math.floor(Math.random() * (highMidi - lowMidi + 1));
-  return midiToNote(randomMidi);
+  
+  if (includeAccidentals) {
+    const randomMidi = lowMidi + Math.floor(Math.random() * (highMidi - lowMidi + 1));
+    return midiToNote(randomMidi);
+  } else {
+    // Only natural notes
+    const naturalNotes = getNotesInRange(lowNote, highNote).filter(n => n.accidental === '');
+    if (naturalNotes.length === 0) {
+      // Fallback if no natural notes in range
+      return midiToNote(lowMidi);
+    }
+    return naturalNotes[Math.floor(Math.random() * naturalNotes.length)];
+  }
 }
 
 // Get all notes in range
