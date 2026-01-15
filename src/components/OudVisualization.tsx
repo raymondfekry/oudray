@@ -121,33 +121,38 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
     if (!hintsEnabled) return null;
     
     const markers: JSX.Element[] = [];
-    const markerPositions = [2, 4, 5, 7, 9, 11, 12]; // Common oud positions
+    // Show all semitones from 0 to 12
+    const markerPositions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
     
-    markerPositions.forEach((semitone, i) => {
+    markerPositions.forEach((semitone) => {
       const x = neckStartX + (semitone / MAX_SEMITONES) * fingerboardWidth;
+      const isEven = semitone % 2 === 0;
+      const isOctave = semitone === 12;
+      
       markers.push(
         <line
-          key={`marker-${i}`}
+          key={`marker-${semitone}`}
           x1={x}
           y1={stringStartY - 15}
           x2={x}
           y2={stringEndY + 15}
           stroke="hsl(var(--oud-rosette))"
-          strokeWidth={semitone === 12 ? 3 : 1}
-          strokeDasharray={semitone === 12 ? undefined : "4,4"}
-          opacity={0.5}
+          strokeWidth={isOctave ? 3 : isEven ? 1.5 : 0.75}
+          strokeDasharray={isOctave ? undefined : isEven ? "4,4" : "2,4"}
+          opacity={isOctave ? 0.7 : isEven ? 0.5 : 0.25}
         />
       );
       
       // Add semitone number
       markers.push(
         <text
-          key={`marker-text-${i}`}
+          key={`marker-text-${semitone}`}
           x={x}
           y={stringStartY - 22}
           textAnchor="middle"
-          className="fill-muted-foreground text-xs"
-          fontSize={10}
+          className={isEven ? "fill-foreground" : "fill-muted-foreground/50"}
+          fontSize={isEven ? 11 : 9}
+          fontWeight={isEven ? 600 : 400}
         >
           {semitone}
         </text>
@@ -183,9 +188,9 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
         {/* Last played note display */}
         <div className="flex items-center gap-4">
           {lastPlayedNote && (
-            <div className="bg-accent/20 border border-accent rounded-lg px-4 py-2 flex items-center gap-2 animate-in fade-in duration-200">
+            <div className="bg-accent/20 border border-accent rounded-lg px-5 py-3 flex items-center gap-3 animate-in fade-in duration-200">
               <span className="text-sm text-muted-foreground">Played:</span>
-              <span className="text-lg font-bold text-accent">
+              <span className="text-3xl font-bold text-accent">
                 {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
               </span>
             </div>
