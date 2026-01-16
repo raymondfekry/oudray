@@ -133,27 +133,35 @@ function Index() {
   if (isLandscapeMode) {
     return (
       <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-        {/* Minimal header */}
-        <header className="h-10 flex-shrink-0 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-3">
-          <div className="flex items-center gap-2">
-            <Music className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">Oud Trainer</span>
-            <span className="text-xs text-success ml-2">✓ {score.correct}</span>
-            <span className="text-xs text-destructive">✗ {score.incorrect}</span>
+        {/* Top row: Music staff + controls + hints/played note */}
+        <header className="flex-shrink-0 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-2 py-1 gap-2">
+          {/* Music staff - compact */}
+          <div className="flex-1 min-w-0 max-w-[50%]">
+            <MusicStaffCompact 
+              targetNotes={targetNotes}
+              currentIndex={currentIndex}
+              notationSystem={settings.notationSystem}
+            />
           </div>
           
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 text-xs px-2">
+          {/* Controls and info */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-success">✓ {score.correct}</span>
+              <span className="text-destructive">✗ {score.incorrect}</span>
+            </div>
+            
+            <Button variant="ghost" size="sm" onClick={handleReset} className="h-6 text-xs px-2">
               New
             </Button>
-            <Button variant="outline" size="icon" onClick={toggleMute} className="h-7 w-7">
+            <Button variant="outline" size="icon" onClick={toggleMute} className="h-6 w-6">
               {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
             </Button>
             <Button 
               variant="default" 
               size="icon" 
               onClick={toggleLandscapeMode} 
-              className="h-7 w-7"
+              className="h-6 w-6"
             >
               <Smartphone className="h-3 w-3" />
             </Button>
@@ -161,26 +169,14 @@ function Index() {
           </div>
         </header>
         
-        {/* Main content - horizontal split */}
-        <main className="flex-1 flex min-h-0">
-          {/* Music staff - 20% */}
-          <section className="w-[20%] flex-shrink-0 p-2 border-r border-border">
-            <MusicStaffCompact 
-              targetNotes={targetNotes}
-              currentIndex={currentIndex}
-              notationSystem={settings.notationSystem}
-            />
-          </section>
-          
-          {/* Oud - 80% (75% oud + 5% right panel handled inside) */}
-          <section className="flex-1 p-2">
-            <OudVisualizationCompact 
-              settings={settings} 
-              onNotePlayed={handleNotePlayed}
-              lastPlayedNote={lastPlayedNote}
-              onLastPlayedNoteChange={setLastPlayedNote}
-            />
-          </section>
+        {/* Main content - Oud takes full width */}
+        <main className="flex-1 min-h-0 p-1">
+          <OudVisualizationCompact 
+            settings={settings} 
+            onNotePlayed={handleNotePlayed}
+            lastPlayedNote={lastPlayedNote}
+            onLastPlayedNoteChange={setLastPlayedNote}
+          />
         </main>
       </div>
     );

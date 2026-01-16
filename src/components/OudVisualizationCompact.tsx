@@ -19,7 +19,7 @@ interface TapRipple {
   y: number;
 }
 
-const MAX_SEMITONES = 12;
+const MAX_SEMITONES = 10;
 
 export function OudVisualizationCompact({ 
   settings, 
@@ -36,16 +36,17 @@ export function OudVisualizationCompact({
   const { strings, notationSystem, stringCount } = settings;
   const activeStrings = strings.slice(0, stringCount);
   
-  // SVG dimensions - more compact
-  const svgWidth = 600;
+  // SVG dimensions - narrower (removed columns 11-12, smaller bowl)
+  const svgWidth = 420;
   const svgHeight = 180;
-  const neckStartX = 40;
-  const neckEndX = 400;
-  const bowlCenterX = 500;
-  const bowlWidth = 180;
+  const neckStartX = 30;
+  const neckEndX = 280; // Reduced to show only 0-10 frets
+  const bowlCenterX = 350;
+  const bowlWidth = 120; // Smaller bowl/strumming area
   const stringStartY = 40;
   const stringEndY = 140;
   const stringSpacing = (stringEndY - stringStartY) / (stringCount - 1);
+  const maxSemitone = 10; // Only show semitones 0-10
   
   const fingerboardWidth = neckEndX - neckStartX;
   
@@ -134,12 +135,12 @@ export function OudVisualizationCompact({
     if (!hintsEnabled) return null;
     
     const markers: JSX.Element[] = [];
-    const markerPositions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const markerPositions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     
     markerPositions.forEach((semitone) => {
       const x = neckStartX + (semitone / MAX_SEMITONES) * fingerboardWidth;
       const isEven = semitone % 2 === 0;
-      const isOctave = semitone === 12;
+      const isTen = semitone === 10;
       
       markers.push(
         <line
@@ -149,9 +150,9 @@ export function OudVisualizationCompact({
           x2={x}
           y2={stringEndY + 10}
           stroke="hsl(var(--oud-rosette))"
-          strokeWidth={isOctave ? 2 : isEven ? 1 : 0.5}
-          strokeDasharray={isOctave ? undefined : isEven ? "3,3" : "2,3"}
-          opacity={isOctave ? 0.7 : isEven ? 0.5 : 0.25}
+          strokeWidth={isTen ? 2 : isEven ? 1 : 0.5}
+          strokeDasharray={isTen ? undefined : isEven ? "3,3" : "2,3"}
+          opacity={isTen ? 0.7 : isEven ? 0.5 : 0.25}
         />
       );
       
@@ -174,9 +175,30 @@ export function OudVisualizationCompact({
   };
   
   return (
-    <div className="relative flex flex-col h-full">
-      {/* Main Oud SVG - takes most space */}
-      <div className="flex-1 min-w-0">
+    <div className="relative h-full">
+      {/* Hints toggle - absolute positioned */}
+      <div className="absolute top-1 left-1 z-10 flex items-center gap-2">
+        <Button
+          variant={hintsEnabled ? "default" : "outline"}
+          size="sm"
+          onClick={() => setHintsEnabled(!hintsEnabled)}
+          className="gap-1 text-xs h-6 px-2"
+        >
+          {hintsEnabled ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
+          Hints
+        </Button>
+        
+        {lastPlayedNote && (
+          <div className="bg-accent/20 border border-accent rounded px-2 py-0.5 flex items-center gap-1 animate-in fade-in duration-200">
+            <span className="text-lg font-bold text-accent">
+              {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
+            </span>
+          </div>
+        )}
+      </div>
+      
+      {/* Main Oud SVG */}
+      <div className="h-full">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
@@ -332,28 +354,6 @@ export function OudVisualizationCompact({
             rx={2}
           />
         </svg>
-      </div>
-      
-      {/* Bottom panel - hints and played note */}
-      <div className="flex items-center justify-between gap-3 pt-2 px-1 flex-shrink-0">
-        <Button
-          variant={hintsEnabled ? "default" : "outline"}
-          size="sm"
-          onClick={() => setHintsEnabled(!hintsEnabled)}
-          className="gap-1 text-xs h-7"
-        >
-          {hintsEnabled ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
-          Hints
-        </Button>
-        
-        {lastPlayedNote && (
-          <div className="bg-accent/20 border border-accent rounded-lg px-3 py-1 flex items-center gap-2 animate-in fade-in duration-200">
-            <span className="text-[10px] text-muted-foreground">Played:</span>
-            <span className="text-lg font-bold text-accent">
-              {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
