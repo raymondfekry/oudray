@@ -175,9 +175,30 @@ export function OudVisualizationCompact({
   };
   
   return (
-    <div className="flex flex-col h-full">
-      {/* Main Oud SVG - takes most of the space */}
-      <div className="flex-1 min-h-0">
+    <div className="relative h-full">
+      {/* Hints toggle - absolute positioned */}
+      <div className="absolute top-1 left-1 z-10 flex items-center gap-2">
+        <Button
+          variant={hintsEnabled ? "default" : "outline"}
+          size="sm"
+          onClick={() => setHintsEnabled(!hintsEnabled)}
+          className="gap-1 text-xs h-6 px-2"
+        >
+          {hintsEnabled ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
+          Hints
+        </Button>
+        
+        {lastPlayedNote && (
+          <div className="bg-accent/20 border border-accent rounded px-2 py-0.5 flex items-center gap-1 animate-in fade-in duration-200">
+            <span className="text-lg font-bold text-accent">
+              {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
+            </span>
+          </div>
+        )}
+      </div>
+      
+      {/* Main Oud SVG */}
+      <div className="h-full">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
@@ -333,27 +354,6 @@ export function OudVisualizationCompact({
             rx={2}
           />
         </svg>
-      </div>
-      
-      {/* Bottom row: Hints toggle and played note */}
-      <div className="flex-shrink-0 flex items-center justify-center gap-3 py-1">
-        <Button
-          variant={hintsEnabled ? "default" : "outline"}
-          size="sm"
-          onClick={() => setHintsEnabled(!hintsEnabled)}
-          className="gap-1 text-xs h-6 px-2"
-        >
-          {hintsEnabled ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
-          Hints
-        </Button>
-        
-        {lastPlayedNote && (
-          <div className="bg-accent/20 border border-accent rounded px-2 py-0.5 flex items-center gap-1 animate-in fade-in duration-200">
-            <span className="text-sm font-bold text-accent">
-              {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
