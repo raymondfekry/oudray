@@ -129,54 +129,52 @@ function Index() {
     toast(isLandscapeMode ? 'Standard mode' : 'Landscape mode enabled');
   };
 
-  // Landscape mode layout
+  // Landscape mode layout - 20% music sheet, 80% oud
   if (isLandscapeMode) {
     return (
-      <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-        {/* Top row: Music staff + controls + hints/played note */}
-        <header className="flex-shrink-0 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-2 py-1 gap-2">
-          {/* Music staff - compact */}
-          <div className="flex-1 min-w-0 max-w-[50%]">
-            <MusicStaffCompact 
-              targetNotes={targetNotes}
-              currentIndex={currentIndex}
-              notationSystem={settings.notationSystem}
-            />
-          </div>
+      <div className="h-screen w-screen overflow-hidden bg-background flex flex-row">
+        {/* Left column: Music staff (20%) */}
+        <div className="w-[20%] flex-shrink-0 border-r border-border bg-card/50 flex flex-col p-1">
+          <MusicStaffCompact 
+            targetNotes={targetNotes}
+            currentIndex={currentIndex}
+            notationSystem={settings.notationSystem}
+          />
           
-          {/* Controls and info */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Controls below staff */}
+          <div className="flex flex-wrap items-center gap-1 mt-1">
             <div className="flex items-center gap-1 text-xs">
-              <span className="text-success">✓ {score.correct}</span>
-              <span className="text-destructive">✗ {score.incorrect}</span>
+              <span className="text-success">✓{score.correct}</span>
+              <span className="text-destructive">✗{score.incorrect}</span>
             </div>
-            
-            <Button variant="ghost" size="sm" onClick={handleReset} className="h-6 text-xs px-2">
+            <Button variant="ghost" size="sm" onClick={handleReset} className="h-5 text-[10px] px-1">
               New
             </Button>
-            <Button variant="outline" size="icon" onClick={toggleMute} className="h-6 w-6">
+            <Button variant="outline" size="icon" onClick={toggleMute} className="h-5 w-5">
               {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
             </Button>
             <Button 
               variant="default" 
               size="icon" 
               onClick={toggleLandscapeMode} 
-              className="h-6 w-6"
+              className="h-5 w-5"
             >
               <Smartphone className="h-3 w-3" />
             </Button>
             <SettingsPanel settings={settings} onSettingsChange={handleSettingsChange} />
           </div>
-        </header>
+        </div>
         
-        {/* Main content - Oud takes full width */}
-        <main className="flex-1 min-h-0 p-1">
-          <OudVisualizationCompact 
-            settings={settings} 
-            onNotePlayed={handleNotePlayed}
-            lastPlayedNote={lastPlayedNote}
-            onLastPlayedNoteChange={setLastPlayedNote}
-          />
+        {/* Right column: Oud (80%) */}
+        <main className="flex-1 min-h-0 flex flex-col p-1">
+          <div className="flex-1 min-h-0">
+            <OudVisualizationCompact 
+              settings={settings} 
+              onNotePlayed={handleNotePlayed}
+              lastPlayedNote={lastPlayedNote}
+              onLastPlayedNoteChange={setLastPlayedNote}
+            />
+          </div>
         </main>
       </div>
     );
