@@ -38,13 +38,13 @@ export function OudVisualizationCompact({
   
   // SVG dimensions - more compact
   const svgWidth = 600;
-  const svgHeight = 220;
+  const svgHeight = 180;
   const neckStartX = 40;
   const neckEndX = 400;
   const bowlCenterX = 500;
   const bowlWidth = 180;
-  const stringStartY = 50;
-  const stringEndY = 170;
+  const stringStartY = 40;
+  const stringEndY = 140;
   const stringSpacing = (stringEndY - stringStartY) / (stringCount - 1);
   
   const fingerboardWidth = neckEndX - neckStartX;
@@ -53,11 +53,36 @@ export function OudVisualizationCompact({
     if (!svgRef.current) return;
     
     const rect = svgRef.current.getBoundingClientRect();
-    const scaleX = svgWidth / rect.width;
-    const scaleY = svgHeight / rect.height;
     
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    // Get click position relative to SVG element
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    
+    // Calculate the actual rendered SVG area accounting for preserveAspectRatio
+    const svgAspect = svgWidth / svgHeight;
+    const containerAspect = rect.width / rect.height;
+    
+    let renderedWidth: number, renderedHeight: number;
+    let offsetX = 0, offsetY = 0;
+    
+    if (containerAspect > svgAspect) {
+      // Container is wider - SVG is height-constrained
+      renderedHeight = rect.height;
+      renderedWidth = renderedHeight * svgAspect;
+      offsetX = (rect.width - renderedWidth) / 2;
+    } else {
+      // Container is taller - SVG is width-constrained
+      renderedWidth = rect.width;
+      renderedHeight = renderedWidth / svgAspect;
+      offsetY = (rect.height - renderedHeight) / 2;
+    }
+    
+    // Convert click to SVG coordinates
+    const x = ((clickX - offsetX) / renderedWidth) * svgWidth;
+    const y = ((clickY - offsetY) / renderedHeight) * svgHeight;
+    
+    // Check if click is outside the actual SVG area
+    if (x < 0 || x > svgWidth || y < 0 || y > svgHeight) return;
     
     let closestString = 0;
     let minDistance = Infinity;
@@ -149,7 +174,7 @@ export function OudVisualizationCompact({
   };
   
   return (
-    <div className="relative flex h-full">
+    <div className="relative flex flex-col h-full">
       {/* Main Oud SVG - takes most space */}
       <div className="flex-1 min-w-0">
         <svg
@@ -186,7 +211,7 @@ export function OudVisualizationCompact({
             cx={bowlCenterX}
             cy={svgHeight / 2}
             rx={bowlWidth / 2}
-            ry={75}
+            ry={60}
             fill="url(#woodGrainCompact)"
           />
           
@@ -194,18 +219,18 @@ export function OudVisualizationCompact({
           <circle
             cx={bowlCenterX - 20}
             cy={svgHeight / 2}
-            r={25}
+            r={22}
             fill="url(#rosetteGradCompact)"
           />
           <circle
             cx={bowlCenterX - 20}
             cy={svgHeight / 2}
-            r={18}
+            r={15}
             fill="hsl(25, 30%, 8%)"
           />
           
           {/* Decorative rings */}
-          {[20, 23, 27].map((r, i) => (
+          {[17, 20, 24].map((r, i) => (
             <circle
               key={i}
               cx={bowlCenterX - 20}
@@ -221,9 +246,9 @@ export function OudVisualizationCompact({
           {/* Neck */}
           <rect
             x={neckStartX - 8}
-            y={stringStartY - 15}
+            y={stringStartY - 12}
             width={neckEndX - neckStartX + 30}
-            height={stringEndY - stringStartY + 30}
+            height={stringEndY - stringStartY + 24}
             rx={4}
             fill="url(#neckGrainCompact)"
           />
@@ -231,9 +256,9 @@ export function OudVisualizationCompact({
           {/* Nut */}
           <rect
             x={neckStartX - 4}
-            y={stringStartY - 8}
+            y={stringStartY - 6}
             width={6}
-            height={stringEndY - stringStartY + 16}
+            height={stringEndY - stringStartY + 12}
             fill="hsl(40, 20%, 85%)"
             rx={2}
           />
@@ -301,7 +326,7 @@ export function OudVisualizationCompact({
           <rect
             x={bowlCenterX + 45}
             y={stringStartY - 4}
-            width={20}
+            width={18}
             height={stringEndY - stringStartY + 8}
             fill="hsl(25, 40%, 20%)"
             rx={2}
@@ -309,24 +334,24 @@ export function OudVisualizationCompact({
         </svg>
       </div>
       
-      {/* Right side panel - hints and played note */}
-      <div className="w-24 flex-shrink-0 flex flex-col justify-center gap-3 pl-3">
+      {/* Bottom panel - hints and played note */}
+      <div className="flex items-center justify-between gap-3 pt-2 px-1 flex-shrink-0">
         <Button
           variant={hintsEnabled ? "default" : "outline"}
           size="sm"
           onClick={() => setHintsEnabled(!hintsEnabled)}
-          className="gap-1 text-xs h-8"
+          className="gap-1 text-xs h-7"
         >
           {hintsEnabled ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
           Hints
         </Button>
         
         {lastPlayedNote && (
-          <div className="bg-accent/20 border border-accent rounded-lg px-2 py-2 text-center animate-in fade-in duration-200">
-            <div className="text-[10px] text-muted-foreground">Played</div>
-            <div className="text-xl font-bold text-accent">
+          <div className="bg-accent/20 border border-accent rounded-lg px-3 py-1 flex items-center gap-2 animate-in fade-in duration-200">
+            <span className="text-[10px] text-muted-foreground">Played:</span>
+            <span className="text-lg font-bold text-accent">
               {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
-            </div>
+            </span>
           </div>
         )}
       </div>
