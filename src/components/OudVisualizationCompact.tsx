@@ -36,15 +36,14 @@ export function OudVisualizationCompact({
   const { strings, notationSystem, stringCount } = settings;
   const activeStrings = strings.slice(0, stringCount);
   
-  // SVG dimensions - narrower (removed columns 11-12, smaller bowl)
   const svgWidth = 420;
-  const svgHeight = 180;
+  const svgHeight = 140;
   const neckStartX = 30;
-  const neckEndX = 280; // Reduced to show only 0-10 frets
+  const neckEndX = 280;
   const bowlCenterX = 350;
-  const bowlWidth = 120; // Smaller bowl/strumming area
-  const stringStartY = 40;
-  const stringEndY = 140;
+  const bowlWidth = 120;
+  const stringStartY = 30;
+  const stringEndY = 130;
   const stringSpacing = (stringEndY - stringStartY) / (stringCount - 1);
   const maxSemitone = 10; // Only show semitones 0-10
   
@@ -185,7 +184,7 @@ export function OudVisualizationCompact({
           className="gap-1 text-xs h-6 px-2"
         >
           {hintsEnabled ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
-          Hints
+          Hintz
         </Button>
         
         {lastPlayedNote && (

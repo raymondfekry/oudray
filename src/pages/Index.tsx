@@ -11,6 +11,7 @@ import { Music, Volume2, VolumeX, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 interface TargetNote {
   note: Note;
@@ -132,52 +133,54 @@ function Index() {
   // Landscape mode layout
   if (isLandscapeMode) {
     return (
-      <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-        {/* Top row: Music staff + controls + hints/played note */}
-        <header className="flex-shrink-0 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-2 py-1 gap-2">
-          {/* Music staff - compact */}
-          <div className="flex-1 min-w-0 max-w-[50%]">
-            <MusicStaffCompact 
-              targetNotes={targetNotes}
-              currentIndex={currentIndex}
-              notationSystem={settings.notationSystem}
-            />
-          </div>
-          
-          {/* Controls and info */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center gap-1 text-xs">
-              <span className="text-success">✓ {score.correct}</span>
-              <span className="text-destructive">✗ {score.incorrect}</span>
+      <div className="h-screen w-screen bg-background flex flex-col">
+        <ResizablePanelGroup direction="vertical" className="flex-1">
+          <ResizablePanel defaultSize={30} minSize={20}>
+            <header className="border-b border-border bg-card/50 backdrop-blur-sm flex h-full items-center justify-between px-2 py-1 gap-2">
+              <div className="flex-1 min-w-0 max-w-[50%] h-full">
+                <MusicStaffCompact 
+                  targetNotes={targetNotes}
+                  currentIndex={currentIndex}
+                  notationSystem={settings.notationSystem}
+                />
+              </div>
+              
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 text-xs">
+                  <span className="text-success">✓ {score.correct}</span>
+                  <span className="text-destructive">✗ {score.incorrect}</span>
+                </div>
+                
+                <Button variant="ghost" size="sm" onClick={handleReset} className="h-6 text-xs px-2">
+                  New
+                </Button>
+                <Button variant="outline" size="icon" onClick={toggleMute} className="h-6 w-6">
+                  {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="icon" 
+                  onClick={toggleLandscapeMode} 
+                  className="h-6 w-6"
+                >
+                  <Smartphone className="h-3 w-3" />
+                </Button>
+                <SettingsPanel settings={settings} onSettingsChange={handleSettingsChange} />
+              </div>
+            </header>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={70} minSize={40}>
+            <div className="h-full p-1">
+              <OudVisualizationCompact 
+                settings={settings} 
+                onNotePlayed={handleNotePlayed}
+                lastPlayedNote={lastPlayedNote}
+                onLastPlayedNoteChange={setLastPlayedNote}
+              />
             </div>
-            
-            <Button variant="ghost" size="sm" onClick={handleReset} className="h-6 text-xs px-2">
-              New
-            </Button>
-            <Button variant="outline" size="icon" onClick={toggleMute} className="h-6 w-6">
-              {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-            </Button>
-            <Button 
-              variant="default" 
-              size="icon" 
-              onClick={toggleLandscapeMode} 
-              className="h-6 w-6"
-            >
-              <Smartphone className="h-3 w-3" />
-            </Button>
-            <SettingsPanel settings={settings} onSettingsChange={handleSettingsChange} />
-          </div>
-        </header>
-        
-        {/* Main content - Oud takes full width */}
-        <main className="flex-1 min-h-0 p-1">
-          <OudVisualizationCompact 
-            settings={settings} 
-            onNotePlayed={handleNotePlayed}
-            lastPlayedNote={lastPlayedNote}
-            onLastPlayedNoteChange={setLastPlayedNote}
-          />
-        </main>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     );
   }

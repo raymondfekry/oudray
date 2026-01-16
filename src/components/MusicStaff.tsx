@@ -1,6 +1,7 @@
 import React from 'react';
 import { Note, formatNoteShort, NotationSystem, getStaffPosition } from '@/lib/noteUtils';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TargetNote {
   note: Note;
@@ -20,6 +21,8 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
   const noteSpacing = 100;
   const leftPadding = 100;
   const middleLineY = staffHeight / 2;
+  const isMobile = useIsMobile();
+  const currentNote = targetNotes[currentIndex]?.note;
   
   // Staff lines Y positions (5 lines)
   const staffLines = [-2, -1, 0, 1, 2].map(i => middleLineY + i * lineSpacing);
@@ -160,42 +163,67 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
   };
   
   return (
-    <div className="bg-parchment rounded-xl p-6 shadow-lg border border-border overflow-hidden">
-      <svg 
-        viewBox={`0 0 ${leftPadding + targetNotes.length * noteSpacing + 50} ${staffHeight}`}
-        className="w-full h-auto"
-        style={{ minHeight: '180px' }}
-      >
-        {/* Staff lines */}
-        {staffLines.map((y, i) => (
-          <line
-            key={i}
-            x1={20}
-            y1={y}
-            x2={leftPadding + targetNotes.length * noteSpacing + 30}
-            y2={y}
-            className="stroke-staff-line"
-            strokeWidth={1.5}
-          />
-        ))}
-        
-        {/* Treble clef (simplified) */}
-        <text
-          x={35}
-          y={middleLineY + 35}
-          className="fill-staff-note musical-text"
-          fontSize={80}
-          fontFamily="serif"
+    <div
+      className={cn(
+        'bg-parchment rounded-xl p-6 shadow-lg border border-border overflow-hidden',
+        isMobile && 'h-[30vh]'
+      )}
+    >
+      <div className="flex items-center gap-4 h-full">
+        <div className="flex-1">
+          <svg 
+            viewBox={`0 0 ${leftPadding + targetNotes.length * noteSpacing + 50} ${staffHeight}`}
+            className="w-full h-auto"
+            style={{ minHeight: '180px' }}
+          >
+            {/* Staff lines */}
+            {staffLines.map((y, i) => (
+              <line
+                key={i}
+                x1={20}
+                y1={y}
+                x2={leftPadding + targetNotes.length * noteSpacing + 30}
+                y2={y}
+                className="stroke-staff-line"
+                strokeWidth={1.5}
+              />
+            ))}
+            
+            {/* Treble clef (simplified) */}
+            <text
+              x={35}
+              y={middleLineY + 35}
+              className="fill-staff-note musical-text"
+              fontSize={80}
+              fontFamily="serif"
+            >
+              𝄞
+            </text>
+            
+            {/* Notes */}
+            {targetNotes.map((targetNote, index) => renderNote(targetNote, index))}
+          </svg>
+        </div>
+        <div
+          className={cn(
+            'flex items-center justify-center',
+            !isMobile && 'hidden'
+          )}
         >
-          𝄞
-        </text>
-        
-        {/* Notes */}
-        {targetNotes.map((targetNote, index) => renderNote(targetNote, index))}
-      </svg>
+          {currentNote && (
+            <div className="px-3 py-1 rounded-full text-sm font-medium bg-accent text-accent-foreground">
+              {formatNoteShort(currentNote, notationSystem)}{currentNote.octave}
+            </div>
+          )}
+        </div>
+      </div>
       
-      {/* Note labels below */}
-      <div className="flex justify-center mt-4 gap-8 ml-16">
+      <div
+        className={cn(
+          'justify-center mt-4 gap-8 ml-16',
+          isMobile ? 'hidden' : 'flex'
+        )}
+      >
         {targetNotes.map((targetNote, index) => (
           <div
             key={index}

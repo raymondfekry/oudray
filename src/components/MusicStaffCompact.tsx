@@ -1,6 +1,7 @@
 import React from 'react';
 import { Note, formatNoteShort, NotationSystem, getStaffPosition } from '@/lib/noteUtils';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TargetNote {
   note: Note;
@@ -20,6 +21,27 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
   const noteSpacing = 60;
   const leftPadding = 50;
   const middleLineY = staffHeight / 2;
+  const isMobile = useIsMobile();
+  const currentNote = targetNotes[currentIndex]?.note;
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = React.useState(1);
+  
+  React.useEffect(() => {
+    const element = containerRef.current;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    
+    const baseHeight = 180;
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0];
+      const height = entry.contentRect.height;
+      if (!height) return;
+      const nextScale = Math.min(1, height / baseHeight);
+      setScale(nextScale);
+    });
+    
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   
   // Staff lines Y positions (5 lines)
   const staffLines = [-2, -1, 0, 1, 2].map(i => middleLineY + i * lineSpacing);
@@ -134,42 +156,68 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
   };
   
   return (
-    <div className="bg-parchment rounded-lg p-2 shadow border border-border overflow-hidden h-full flex flex-col justify-center">
-      <svg 
-        viewBox={`0 0 ${leftPadding + targetNotes.length * noteSpacing + 20} ${staffHeight}`}
-        className="w-full h-auto"
-        preserveAspectRatio="xMidYMid meet"
+    <div
+      ref={containerRef}
+      className="bg-parchment rounded-lg p-2 shadow border border-border overflow-hidden h-full flex flex-col"
+    >
+      <div
+        className="flex flex-1 items-center gap-2"
+        style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
       >
-        {/* Staff lines */}
-        {staffLines.map((y, i) => (
-          <line
-            key={i}
-            x1={10}
-            y1={y}
-            x2={leftPadding + targetNotes.length * noteSpacing + 10}
-            y2={y}
-            className="stroke-staff-line"
-            strokeWidth={1}
-          />
-        ))}
-        
-        {/* Treble clef */}
-        <text
-          x={20}
-          y={middleLineY + 22}
-          className="fill-staff-note musical-text"
-          fontSize={48}
-          fontFamily="serif"
+        <div className="flex-1 h-full flex flex-col justify-center">
+          <svg 
+            viewBox={`0 0 ${leftPadding + targetNotes.length * noteSpacing + 20} ${staffHeight}`}
+            className="w-full h-full"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            {/* Staff lines */}
+            {staffLines.map((y, i) => (
+              <line
+                key={i}
+                x1={10}
+                y1={y}
+                x2={leftPadding + targetNotes.length * noteSpacing + 10}
+                y2={y}
+                className="stroke-staff-line"
+                strokeWidth={1}
+              />
+            ))}
+            
+            {/* Treble clef */}
+            <text
+              x={20}
+              y={middleLineY + 22}
+              className="fill-staff-note musical-text"
+              fontSize={48}
+              fontFamily="serif"
+            >
+              𝄞
+            </text>
+            
+            {/* Notes */}
+            {targetNotes.map((targetNote, index) => renderNote(targetNote, index))}
+          </svg>
+        </div>
+        <div
+          className={cn(
+            'flex items-center justify-center',
+            !isMobile && 'hidden'
+          )}
         >
-          𝄞
-        </text>
-        
-        {/* Notes */}
-        {targetNotes.map((targetNote, index) => renderNote(targetNote, index))}
-      </svg>
+          {currentNote && (
+            <div className="px-2 py-0.5 rounded text-xs font-medium bg-accent text-accent-foreground">
+              {formatNoteShort(currentNote, notationSystem)}{currentNote.octave}
+            </div>
+          )}
+        </div>
+      </div>
       
-      {/* Compact note labels */}
-      <div className="flex justify-center gap-4 ml-8 mt-1">
+      <div
+        className={cn(
+          'justify-center gap-4 ml-8 mt-1',
+          isMobile ? 'hidden' : 'flex'
+        )}
+      >
         {targetNotes.map((targetNote, index) => (
           <div
             key={index}
