@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { Note, formatNoteShort, NotationSystem, noteToMidi, midiToNote } from '@/lib/noteUtils';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Note, formatNoteShort, NotationSystem, noteToMidi, midiToNote, notesEqual } from '@/lib/noteUtils';
 import { audioEngine } from '@/lib/audioEngine';
 import { Settings, StringConfig } from '@/lib/settings';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,10 @@ import {
 interface OudVisualizationProps {
   settings: Settings;
   onNotePlayed: (note: Note) => void;
+  externalLastPlayedNote?: Note | null;
+  highlightNote?: Note | null;
+  expectedNote?: Note | null;
+  currentStatus?: 'pending' | 'correct' | 'incorrect';
 }
 
 interface TapRipple {
@@ -24,7 +28,7 @@ interface TapRipple {
 
 const MAX_SEMITONES = 12; // Maximum semitones across fingerboard
 
-export function OudVisualization({ settings, onNotePlayed }: OudVisualizationProps) {
+export function OudVisualization({ settings, onNotePlayed, externalLastPlayedNote, highlightNote, expectedNote, currentStatus }: OudVisualizationProps) {
   const [hintsEnabled, setHintsEnabled] = useState(false);
   const [ripples, setRipples] = useState<TapRipple[]>([]);
   const [activeString, setActiveString] = useState<number | null>(null);
@@ -48,6 +52,31 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
   
   // Fingerboard width (where notes are played)
   const fingerboardWidth = neckEndX - neckStartX;
+  
+  useEffect(() => {
+    if (externalLastPlayedNote) {
+      setLastPlayedNote(externalLastPlayedNote);
+    }
+  }, [externalLastPlayedNote]);
+  
+  useEffect(() => {
+    if (!highlightNote) return;
+    const active = strings.slice(0, stringCount);
+    const targetMidi = noteToMidi(highlightNote);
+    let bestIndex = 0;
+    let bestDiff = Infinity;
+    for (let i = 0; i < active.length; i++) {
+      const openMidi = noteToMidi(active[i].openNote);
+      const diff = targetMidi - openMidi;
+      if (diff >= 0 && diff <= MAX_SEMITONES && diff < bestDiff) {
+        bestDiff = diff;
+        bestIndex = i;
+      }
+    }
+    setActiveString(bestIndex);
+    const id = setTimeout(() => setActiveString(null), 300);
+    return () => clearTimeout(id);
+  }, [highlightNote, strings, stringCount]);
   
   const handleOudClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
@@ -114,7 +143,7 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
     
     // Notify parent
     onNotePlayed(playedNote);
-  }, [activeStrings, stringCount, onNotePlayed]);
+  }, [activeStrings, stringCount, onNotePlayed, fingerboardWidth, stringSpacing]);
   
   // Render position markers for hints
   const renderPositionMarkers = () => {
@@ -188,9 +217,9 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
         {/* Last played note display */}
         <div className="flex items-center gap-4">
           {lastPlayedNote && (
-            <div className="bg-accent/20 border border-accent rounded-lg px-5 py-3 flex items-center gap-3 animate-in fade-in duration-200">
+            <div className={`${expectedNote ? (notesEqual(lastPlayedNote, expectedNote) ? 'bg-success/20 border border-success' : 'bg-destructive/20 border border-destructive') : 'bg-accent/20 border border-accent'} rounded-lg px-5 py-3 flex items-center gap-3 animate-in fade-in duration-200`}>
               <span className="text-sm text-muted-foreground">Played:</span>
-              <span className="text-3xl font-bold text-accent">
+              <span className={`text-3xl font-bold ${expectedNote ? (notesEqual(lastPlayedNote, expectedNote) ? 'text-success' : 'text-destructive') : 'text-accent'}`}>
                 {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
               </span>
             </div>
@@ -315,6 +344,11 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
         {activeStrings.map((stringConfig, i) => {
           const y = stringStartY + i * stringSpacing;
           const isActive = activeString === i;
+          const activeStroke = currentStatus === 'correct'
+            ? "hsl(var(--success))"
+            : currentStatus === 'incorrect'
+            ? "hsl(var(--destructive))"
+            : "hsl(42, 80%, 70%)";
           
           // Render double courses if configured
           const courseCount = stringConfig.courseCount;
@@ -331,9 +365,14 @@ export function OudVisualization({ settings, onNotePlayed }: OudVisualizationPro
                     y1={courseY}
                     x2={bowlCenterX + 80}
                     y2={courseY}
-                    stroke={isActive ? "hsl(42, 80%, 70%)" : "hsl(var(--oud-string))"}
+                    stroke={isActive ? activeStroke : "hsl(var(--oud-string))"}
                     strokeWidth={isActive ? 2.5 : 1.5 + (i * 0.2)}
-                    className={cn("string-hover transition-all duration-150", isActive && "note-glow")}
+                    className={cn(
+                      "string-hover transition-all duration-150",
+                      isActive && "note-glow",
+                      isActive && currentStatus === 'correct' && "animate-string-success",
+                      isActive && currentStatus === 'incorrect' && "animate-string-error"
+                    )}
                   />
                 );
               })}

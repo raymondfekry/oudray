@@ -7,6 +7,7 @@ interface TargetNote {
   note: Note;
   status: 'pending' | 'correct' | 'incorrect';
   isNew?: boolean;
+  uid?: string;
 }
 
 interface MusicStaffCompactProps {
@@ -71,21 +72,22 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
     
     return (
       <g 
-        key={`${note.letter}${note.octave}-${index}`}
+        key={targetNote.uid ?? `${note.letter}${note.accidental ?? ''}${note.octave}-${index}`}
         className={cn(
-          'transition-all duration-300',
+          'transition-transform duration-300',
           isNew && 'animate-note-slide',
           status === 'correct' && 'animate-note-correct',
           status === 'incorrect' && 'animate-note-shake'
         )}
+        transform={`translate(${noteX}, 0)`}
       >
         {/* Ledger lines */}
         {ledgerLines.map((ly, i) => (
           <line
             key={i}
-            x1={noteX - 10}
+            x1={-10}
             y1={ly}
-            x2={noteX + 10}
+            x2={10}
             y2={ly}
             className="stroke-staff-line"
             strokeWidth={1}
@@ -95,7 +97,7 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
         {/* Accidental symbol */}
         {note.accidental && (
           <text
-            x={noteX - 12}
+            x={-12}
             y={noteY + 4}
             className={cn(
               'font-bold transition-all duration-200',
@@ -113,7 +115,7 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
         
         {/* Note head */}
         <ellipse
-          cx={noteX}
+          cx={0}
           cy={noteY}
           rx={6}
           ry={5}
@@ -124,14 +126,14 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
             status === 'incorrect' && 'fill-destructive',
             !isCurrent && status === 'pending' && 'fill-staff-note'
           )}
-          transform={`rotate(-15 ${noteX} ${noteY})`}
+          transform={`rotate(-15 0 ${noteY})`}
         />
         
         {/* Note stem */}
         <line
-          x1={noteX + (position < 0 ? -5 : 5)}
+          x1={(position < 0 ? -5 : 5)}
           y1={noteY}
-          x2={noteX + (position < 0 ? -5 : 5)}
+          x2={(position < 0 ? -5 : 5)}
           y2={noteY + (position < 0 ? 30 : -30)}
           className={cn(
             'transition-all duration-200',
@@ -145,7 +147,7 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
         {/* Current note indicator */}
         {isCurrent && status === 'pending' && (
           <circle
-            cx={noteX}
+            cx={0}
             cy={noteY - 18}
             r={3}
             className="fill-accent animate-pulse"

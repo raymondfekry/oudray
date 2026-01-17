@@ -7,6 +7,7 @@ interface TargetNote {
   note: Note;
   status: 'pending' | 'correct' | 'incorrect';
   isNew?: boolean;
+  uid?: string;
 }
 
 interface MusicStaffProps {
@@ -56,21 +57,22 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
     
     return (
       <g 
-        key={`${note.letter}${note.octave}-${index}`}
+        key={targetNote.uid ?? `${note.letter}${note.accidental ?? ''}${note.octave}-${index}`}
         className={cn(
-          'transition-all duration-300',
+          'transition-transform duration-300',
           isNew && 'animate-note-slide',
           status === 'correct' && 'animate-note-correct',
           status === 'incorrect' && 'animate-note-shake'
         )}
+        transform={`translate(${noteX}, 0)`}
       >
         {/* Ledger lines */}
         {ledgerLines.map((ly, i) => (
           <line
             key={i}
-            x1={noteX - 18}
+            x1={-18}
             y1={ly}
-            x2={noteX + 18}
+            x2={18}
             y2={ly}
             className="stroke-staff-line"
             strokeWidth={1.5}
@@ -80,7 +82,7 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
         {/* Accidental symbol (sharp or flat) */}
         {note.accidental && (
           <text
-            x={noteX - 20}
+            x={-20}
             y={noteY + 6}
             className={cn(
               'font-bold transition-all duration-200',
@@ -98,7 +100,7 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
         
         {/* Note head (ellipse) */}
         <ellipse
-          cx={noteX}
+          cx={0}
           cy={noteY}
           rx={10}
           ry={8}
@@ -109,14 +111,14 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
             status === 'incorrect' && 'fill-destructive',
             !isCurrent && status === 'pending' && 'fill-staff-note'
           )}
-          transform={`rotate(-15 ${noteX} ${noteY})`}
+          transform={`rotate(-15 0 ${noteY})`}
         />
         
         {/* Note stem */}
         <line
-          x1={noteX + (position < 0 ? -9 : 9)}
+          x1={(position < 0 ? -9 : 9)}
           y1={noteY}
-          x2={noteX + (position < 0 ? -9 : 9)}
+          x2={(position < 0 ? -9 : 9)}
           y2={noteY + (position < 0 ? 50 : -50)}
           className={cn(
             'transition-all duration-200',
@@ -130,7 +132,7 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
         {/* Current note indicator */}
         {isCurrent && status === 'pending' && (
           <circle
-            cx={noteX}
+            cx={0}
             cy={noteY - 30}
             r={4}
             className="fill-accent animate-pulse"
@@ -140,7 +142,7 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
         {/* Status indicator */}
         {status === 'correct' && (
           <text
-            x={noteX}
+            x={0}
             y={noteY + 35}
             textAnchor="middle"
             className="fill-success text-lg"
@@ -150,7 +152,7 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
         )}
         {status === 'incorrect' && isCurrent && (
           <text
-            x={noteX}
+            x={0}
             y={noteY + 35}
             textAnchor="middle"
             className="fill-destructive text-lg"

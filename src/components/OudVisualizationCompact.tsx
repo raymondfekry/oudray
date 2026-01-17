@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { Note, formatNoteShort, NotationSystem, noteToMidi, midiToNote } from '@/lib/noteUtils';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Note, formatNoteShort, NotationSystem, noteToMidi, midiToNote, notesEqual } from '@/lib/noteUtils';
 import { audioEngine } from '@/lib/audioEngine';
 import { Settings, StringConfig } from '@/lib/settings';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,9 @@ interface OudVisualizationCompactProps {
   onNotePlayed: (note: Note) => void;
   lastPlayedNote: Note | null;
   onLastPlayedNoteChange: (note: Note | null) => void;
+  highlightNote?: Note | null;
+  expectedNote?: Note | null;
+  currentStatus?: 'pending' | 'correct' | 'incorrect';
 }
 
 interface TapRipple {
@@ -25,7 +28,10 @@ export function OudVisualizationCompact({
   settings, 
   onNotePlayed, 
   lastPlayedNote,
-  onLastPlayedNoteChange 
+  onLastPlayedNoteChange,
+  highlightNote,
+  expectedNote,
+  currentStatus
 }: OudVisualizationCompactProps) {
   const [hintsEnabled, setHintsEnabled] = useState(false);
   const [ripples, setRipples] = useState<TapRipple[]>([]);
@@ -48,6 +54,25 @@ export function OudVisualizationCompact({
   const maxSemitone = 10; // Only show semitones 0-10
   
   const fingerboardWidth = neckEndX - neckStartX;
+  
+  useEffect(() => {
+    if (!highlightNote) return;
+    const active = strings.slice(0, stringCount);
+    const targetMidi = noteToMidi(highlightNote);
+    let bestIndex = 0;
+    let bestDiff = Infinity;
+    for (let i = 0; i < active.length; i++) {
+      const openMidi = noteToMidi(active[i].openNote);
+      const diff = targetMidi - openMidi;
+      if (diff >= 0 && diff <= MAX_SEMITONES && diff < bestDiff) {
+        bestDiff = diff;
+        bestIndex = i;
+      }
+    }
+    setActiveString(bestIndex);
+    const id = setTimeout(() => setActiveString(null), 300);
+    return () => clearTimeout(id);
+  }, [highlightNote, strings, stringCount]);
   
   const handleOudClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
@@ -128,7 +153,7 @@ export function OudVisualizationCompact({
     }, 300);
     
     onNotePlayed(playedNote);
-  }, [activeStrings, stringCount, onNotePlayed, onLastPlayedNoteChange]);
+  }, [activeStrings, stringCount, onNotePlayed, onLastPlayedNoteChange, fingerboardWidth, stringSpacing]);
   
   const renderPositionMarkers = () => {
     if (!hintsEnabled) return null;
@@ -188,8 +213,8 @@ export function OudVisualizationCompact({
         </Button>
         
         {lastPlayedNote && (
-          <div className="bg-accent/20 border border-accent rounded px-2 py-0.5 flex items-center gap-1 animate-in fade-in duration-200">
-            <span className="text-lg font-bold text-accent">
+          <div className={`${expectedNote ? (notesEqual(lastPlayedNote, expectedNote) ? 'bg-success/20 border border-success' : 'bg-destructive/20 border border-destructive') : 'bg-accent/20 border border-accent'} rounded px-2 py-0.5 flex items-center gap-1 animate-in fade-in duration-200`}>
+            <span className={`text-lg font-bold ${expectedNote ? (notesEqual(lastPlayedNote, expectedNote) ? 'text-success' : 'text-destructive') : 'text-accent'}`}>
               {formatNoteShort(lastPlayedNote, notationSystem)}{lastPlayedNote.octave}
             </span>
           </div>
@@ -293,6 +318,11 @@ export function OudVisualizationCompact({
             const isActive = activeString === i;
             const courseCount = stringConfig.courseCount;
             const courseOffset = courseCount > 1 ? 2 : 0;
+            const activeStroke = currentStatus === 'correct'
+              ? "hsl(var(--success))"
+              : currentStatus === 'incorrect'
+              ? "hsl(var(--destructive))"
+              : "hsl(42, 80%, 70%)";
             
             return (
               <g key={i}>
@@ -305,9 +335,14 @@ export function OudVisualizationCompact({
                       y1={courseY}
                       x2={bowlCenterX + 60}
                       y2={courseY}
-                      stroke={isActive ? "hsl(42, 80%, 70%)" : "hsl(var(--oud-string))"}
+                      stroke={isActive ? activeStroke : "hsl(var(--oud-string))"}
                       strokeWidth={isActive ? 2 : 1.2 + (i * 0.15)}
-                      className={cn("string-hover transition-all duration-150", isActive && "note-glow")}
+                      className={cn(
+                        "string-hover transition-all duration-150",
+                        isActive && "note-glow",
+                        isActive && currentStatus === 'correct' && "animate-string-success",
+                        isActive && currentStatus === 'incorrect' && "animate-string-error"
+                      )}
                     />
                   );
                 })}

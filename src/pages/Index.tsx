@@ -5,18 +5,20 @@ import { OudVisualization } from '@/components/OudVisualization';
 import { OudVisualizationCompact } from '@/components/OudVisualizationCompact';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { Settings, loadSettings, saveSettings } from '@/lib/settings';
-import { Note, notesEqual, randomNoteInRange } from '@/lib/noteUtils';
+import { Note, notesEqual, randomNoteInRange, noteToMidi } from '@/lib/noteUtils';
 import { audioEngine } from '@/lib/audioEngine';
-import { Music, Volume2, VolumeX, Smartphone } from 'lucide-react';
+import { Music, Volume2, VolumeX, Smartphone, Mic, MicOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { startListening, stopListening } from '@/lib/micPitchDetector';
 
 interface TargetNote {
   note: Note;
   status: 'pending' | 'correct' | 'incorrect';
   isNew?: boolean;
+  uid: string;
 }
 
 function Index() {
@@ -27,6 +29,9 @@ function Index() {
   const [isMuted, setIsMuted] = useState(false);
   const [isLandscapeMode, setIsLandscapeMode] = useState(false);
   const [lastPlayedNote, setLastPlayedNote] = useState<Note | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [liveDetectedNote, setLiveDetectedNote] = useState<Note | null>(null);
+  const [highlightNote, setHighlightNote] = useState<Note | null>(null);
   
   // Initialize target notes
   useEffect(() => {
@@ -44,6 +49,7 @@ function Index() {
       notes.push({
         note: randomNoteInRange(settings.lowestNote, settings.highestNote, settings.includeAccidentals),
         status: 'pending',
+        uid: Math.random().toString(36).slice(2) + Date.now().toString(36),
       });
     }
     setTargetNotes(notes);
@@ -76,6 +82,7 @@ function Index() {
             note: randomNoteInRange(settings.lowestNote, settings.highestNote, settings.includeAccidentals),
             status: 'pending',
             isNew: true,
+            uid: Math.random().toString(36).slice(2) + Date.now().toString(36),
           };
           return [...remaining, newNote];
         });
@@ -122,12 +129,47 @@ function Index() {
     generateNewNotes();
     setScore({ correct: 0, incorrect: 0 });
     setLastPlayedNote(null);
+    setLiveDetectedNote(null);
+    setHighlightNote(null);
     toast.success('New practice session started!');
   };
 
   const toggleLandscapeMode = () => {
     setIsLandscapeMode(!isLandscapeMode);
     toast(isLandscapeMode ? 'Standard mode' : 'Landscape mode enabled');
+  };
+  
+  const onMicNote = useCallback((note: Note) => {
+    setLiveDetectedNote(note);
+    setLastPlayedNote(note);
+    setHighlightNote(note);
+  }, []);
+  
+  useEffect(() => {
+    if (!liveDetectedNote || currentIndex >= targetNotes.length) return;
+    const targetNote = targetNotes[currentIndex].note;
+    
+    // Only process if the current note is pending
+    if (targetNotes[currentIndex].status === 'pending' && notesEqual(liveDetectedNote, targetNote)) {
+      handleNotePlayed(liveDetectedNote);
+      setLiveDetectedNote(null); // Consume the event to prevent re-triggering
+    }
+  }, [liveDetectedNote, currentIndex, targetNotes, handleNotePlayed]);
+  
+  const toggleListening = async () => {
+    if (isListening) {
+      stopListening();
+      setIsListening(false);
+      toast('Mic stopped');
+      return;
+    }
+    try {
+      await startListening(onMicNote, { minStableMs: settings.micDebounceMs });
+      setIsListening(true);
+      toast('Listening...');
+    } catch (e) {
+      toast.error('Microphone access denied');
+    }
   };
 
   // Landscape mode layout
@@ -165,6 +207,34 @@ function Index() {
                 >
                   <Smartphone className="h-3 w-3" />
                 </Button>
+              <Button 
+                variant={isListening ? "default" : "outline"} 
+                size="icon" 
+                onClick={toggleListening} 
+                className="h-6 w-6"
+                title="Mic"
+              >
+                {isListening ? <Mic className="h-3 w-3" /> : <MicOff className="h-3 w-3" />}
+              </Button>
+            {liveDetectedNote && (
+              <div className={`${targetNotes[currentIndex]?.note && notesEqual(liveDetectedNote, targetNotes[currentIndex].note) ? 'bg-success/20 border border-success text-success animate-note-correct' : 'bg-destructive/20 border border-destructive text-destructive animate-note-shake'} px-2 py-0.5 rounded text-xs`}>
+                {settings.notationSystem === 'solfege' ? (
+                  <span>
+                    {liveDetectedNote.letter === 'C' ? 'Do' :
+                     liveDetectedNote.letter === 'D' ? 'Re' :
+                     liveDetectedNote.letter === 'E' ? 'Mi' :
+                     liveDetectedNote.letter === 'F' ? 'Fa' :
+                     liveDetectedNote.letter === 'G' ? 'Sol' :
+                     liveDetectedNote.letter === 'A' ? 'La' : 'Si'}
+                    {liveDetectedNote.accidental === '#' ? '♯' : liveDetectedNote.accidental === 'b' ? '♭' : ''}{liveDetectedNote.octave}
+                  </span>
+                ) : (
+                  <span>
+                    {liveDetectedNote.letter}{liveDetectedNote.accidental === '#' ? '♯' : liveDetectedNote.accidental === 'b' ? '♭' : ''}{liveDetectedNote.octave}
+                  </span>
+                )}
+              </div>
+            )}
                 <SettingsPanel settings={settings} onSettingsChange={handleSettingsChange} />
               </div>
             </header>
@@ -177,6 +247,9 @@ function Index() {
                 onNotePlayed={handleNotePlayed}
                 lastPlayedNote={lastPlayedNote}
                 onLastPlayedNoteChange={setLastPlayedNote}
+                highlightNote={highlightNote}
+                expectedNote={targetNotes[currentIndex]?.note}
+            currentStatus={targetNotes[currentIndex]?.status}
               />
             </div>
           </ResizablePanel>
@@ -217,6 +290,34 @@ function Index() {
             >
               <Smartphone className="h-5 w-5" />
             </Button>
+            <Button 
+              variant={isListening ? "default" : "outline"} 
+              size="icon" 
+              onClick={toggleListening} 
+              className="h-10 w-10"
+              title="Microphone"
+            >
+              {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+            </Button>
+              {liveDetectedNote && (
+                <div className={`${targetNotes[currentIndex]?.note && notesEqual(liveDetectedNote, targetNotes[currentIndex].note) ? 'bg-success/20 border border-success text-success animate-note-correct' : 'bg-destructive/20 border border-destructive text-destructive animate-note-shake'} px-2 py-1 rounded text-sm`}>
+                  {settings.notationSystem === 'solfege' ? (
+                    <span>
+                      {liveDetectedNote.letter === 'C' ? 'Do' :
+                       liveDetectedNote.letter === 'D' ? 'Re' :
+                       liveDetectedNote.letter === 'E' ? 'Mi' :
+                       liveDetectedNote.letter === 'F' ? 'Fa' :
+                       liveDetectedNote.letter === 'G' ? 'Sol' :
+                       liveDetectedNote.letter === 'A' ? 'La' : 'Si'}
+                      {liveDetectedNote.accidental === '#' ? '♯' : liveDetectedNote.accidental === 'b' ? '♭' : ''}{liveDetectedNote.octave}
+                    </span>
+                  ) : (
+                    <span>
+                      {liveDetectedNote.letter}{liveDetectedNote.accidental === '#' ? '♯' : liveDetectedNote.accidental === 'b' ? '♭' : ''}{liveDetectedNote.octave}
+                    </span>
+                  )}
+                </div>
+              )}
             
             <Button variant="outline" size="icon" onClick={toggleMute} className="h-10 w-10">
               {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -257,6 +358,10 @@ function Index() {
             <OudVisualization 
               settings={settings} 
               onNotePlayed={handleNotePlayed}
+              externalLastPlayedNote={liveDetectedNote}
+              highlightNote={highlightNote}
+              expectedNote={targetNotes[currentIndex]?.note}
+              currentStatus={targetNotes[currentIndex]?.status}
             />
           </div>
         </section>
@@ -264,7 +369,7 @@ function Index() {
       
       {/* Footer */}
       <footer className="border-t border-border py-3 text-center text-xs text-muted-foreground">
-        <p>Tap the oud strings to play notes. Match the notes shown on the staff!</p>
+        <p>Tap the oud strings to play notes or use the mic. Match the notes shown on the staff!</p>
       </footer>
     </div>
   );

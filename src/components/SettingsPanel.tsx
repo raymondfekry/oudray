@@ -34,7 +34,7 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
   const handleStringCountChange = (value: string) => {
     const count = parseInt(value);
     // Ensure we have enough string configs
-    let newStrings = [...settings.strings];
+    const newStrings = [...settings.strings];
     while (newStrings.length < count) {
       newStrings.push({ ...DEFAULT_SETTINGS.strings[newStrings.length] });
     }
@@ -82,6 +82,13 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
   
   const handleAccidentalsChange = (checked: boolean) => {
     onSettingsChange({ ...settings, includeAccidentals: checked });
+  };
+  
+  const handleMicDebounceChange = (value: string) => {
+    const ms = parseInt(value);
+    if (!isNaN(ms) && ms >= 0 && ms <= 2000) {
+      onSettingsChange({ ...settings, micDebounceMs: ms });
+    }
   };
   
   const handleReset = () => {
@@ -252,6 +259,21 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
               checked={settings.includeAccidentals}
               onCheckedChange={handleAccidentalsChange}
             />
+          </div>
+          
+          {/* Mic Debounce */}
+          <div className="space-y-2">
+            <Label>Mic Debounce (ms)</Label>
+            <Select value={settings.micDebounceMs.toString()} onValueChange={handleMicDebounceChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[100, 150, 250, 400, 600, 800].map(n => (
+                  <SelectItem key={n} value={n.toString()}>{n} ms</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <Separator />
