@@ -20,7 +20,7 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
   const staffHeight = 120;
   const lineSpacing = 12;
   const noteSpacing = 60;
-  const leftPadding = 50;
+  const leftPadding = 70;
   const middleLineY = staffHeight / 2;
   const isMobile = useIsMobile();
   const currentNote = targetNotes[currentIndex]?.note;
@@ -74,12 +74,13 @@ export function MusicStaffCompact({ targetNotes, currentIndex, notationSystem }:
       <g 
         key={targetNote.uid ?? `${note.letter}${note.accidental ?? ''}${note.octave}-${index}`}
         className={cn(
-          'transition-transform duration-300',
-          isNew && 'animate-note-slide',
           status === 'correct' && 'animate-note-correct',
           status === 'incorrect' && 'animate-note-shake'
         )}
-        transform={`translate(${noteX}, 0)`}
+        style={{
+          transform: `translateX(${noteX}px)`,
+          transition: status === 'pending' ? 'transform 0.4s ease-out' : 'none'
+        }}
       >
         {/* Ledger lines */}
         {ledgerLines.map((ly, i) => (
