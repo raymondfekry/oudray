@@ -32,6 +32,8 @@ function Index() {
   const [isListening, setIsListening] = useState(false);
   const [liveDetectedNote, setLiveDetectedNote] = useState<Note | null>(null);
   const [highlightNote, setHighlightNote] = useState<Note | null>(null);
+  const [lastSuccessTime, setLastSuccessTime] = useState<number | null>(null);
+  const [lastSuccessNote, setLastSuccessNote] = useState<Note | null>(null);
   
   // Initialize target notes
   useEffect(() => {
@@ -131,6 +133,8 @@ function Index() {
     setLastPlayedNote(null);
     setLiveDetectedNote(null);
     setHighlightNote(null);
+    setLastSuccessTime(null);
+    setLastSuccessNote(null);
     toast.success('New practice session started!');
   };
 
@@ -151,10 +155,23 @@ function Index() {
     
     // Only process if the current note is pending
     if (targetNotes[currentIndex].status === 'pending' && notesEqual(liveDetectedNote, targetNote)) {
+      const now = Date.now();
+      
+      // Check if this is a repeated note scenario
+      if (lastSuccessNote && notesEqual(liveDetectedNote, lastSuccessNote) && lastSuccessTime) {
+        const elapsed = now - lastSuccessTime;
+        // If we haven't waited long enough, skip this detection
+        if (elapsed < settings.repeatNoteBufferMs) {
+          return;
+        }
+      }
+      
       handleNotePlayed(liveDetectedNote);
+      setLastSuccessTime(now);
+      setLastSuccessNote(liveDetectedNote);
       setLiveDetectedNote(null); // Consume the event to prevent re-triggering
     }
-  }, [liveDetectedNote, currentIndex, targetNotes, handleNotePlayed]);
+  }, [liveDetectedNote, currentIndex, targetNotes, handleNotePlayed, lastSuccessNote, lastSuccessTime, settings.repeatNoteBufferMs]);
   
   const toggleListening = async () => {
     if (isListening) {
