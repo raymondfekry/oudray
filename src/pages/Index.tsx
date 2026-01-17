@@ -34,6 +34,7 @@ function Index() {
   const [highlightNote, setHighlightNote] = useState<Note | null>(null);
   const [lastSuccessTime, setLastSuccessTime] = useState<number | null>(null);
   const [lastSuccessNote, setLastSuccessNote] = useState<Note | null>(null);
+  const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null);
   
   // Initialize target notes
   useEffect(() => {
@@ -177,17 +178,51 @@ function Index() {
     if (isListening) {
       stopListening();
       setIsListening(false);
+      // Release wake lock
+      if (wakeLock) {
+        await wakeLock.release();
+        setWakeLock(null);
+      }
       toast('Mic stopped');
       return;
     }
     try {
       await startListening(onMicNote, { minStableMs: settings.micDebounceMs });
       setIsListening(true);
+      // Request wake lock to keep screen on
+      if ('wakeLock' in navigator) {
+        try {
+          const lock = await navigator.wakeLock.request('screen');
+          setWakeLock(lock);
+          lock.addEventListener('release', () => setWakeLock(null));
+        } catch (err) {
+          console.warn('Wake Lock not available:', err);
+        }
+      }
       toast('Listening...');
     } catch (e) {
       toast.error('Microphone access denied');
     }
   };
+  
+  // Re-acquire wake lock when page becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && isListening && !wakeLock) {
+        if ('wakeLock' in navigator) {
+          try {
+            const lock = await navigator.wakeLock.request('screen');
+            setWakeLock(lock);
+            lock.addEventListener('release', () => setWakeLock(null));
+          } catch (err) {
+            console.warn('Wake Lock re-acquire failed:', err);
+          }
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isListening, wakeLock]);
 
   // Landscape mode layout
   if (isLandscapeMode) {
