@@ -59,12 +59,13 @@ export function MusicStaff({ targetNotes, currentIndex, notationSystem }: MusicS
       <g 
         key={targetNote.uid ?? `${note.letter}${note.accidental ?? ''}${note.octave}-${index}`}
         className={cn(
-          'transition-transform duration-300',
-          isNew && 'animate-note-slide',
           status === 'correct' && 'animate-note-correct',
           status === 'incorrect' && 'animate-note-shake'
         )}
-        transform={`translate(${noteX}, 0)`}
+        style={{
+          transform: `translateX(${noteX}px)`,
+          transition: status === 'pending' ? 'transform 0.4s ease-out' : 'none'
+        }}
       >
         {/* Ledger lines */}
         {ledgerLines.map((ly, i) => (

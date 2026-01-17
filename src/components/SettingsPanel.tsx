@@ -285,7 +285,7 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[500, 750, 1000, 1250, 1500, 2000].map(n => (
+                {[200, 300, 400, 500, 750, 1000, 1250, 1500].map(n => (
                   <SelectItem key={n} value={n.toString()}>{n} ms</SelectItem>
                 ))}
               </SelectContent>
