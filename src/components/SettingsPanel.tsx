@@ -276,6 +276,22 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
             </Select>
           </div>
           
+          {/* Repeat Note Buffer */}
+          <div className="space-y-2">
+            <Label>Repeat Note Buffer (ms)</Label>
+            <p className="text-xs text-muted-foreground">Wait time before same note counts again</p>
+            <Select value={settings.repeatNoteBufferMs.toString()} onValueChange={(v) => onSettingsChange({ ...settings, repeatNoteBufferMs: parseInt(v) })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[500, 750, 1000, 1250, 1500, 2000].map(n => (
+                  <SelectItem key={n} value={n.toString()}>{n} ms</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           <Separator />
           
           {/* Reset Button */}

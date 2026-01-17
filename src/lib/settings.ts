@@ -16,6 +16,7 @@ export interface Settings {
   notesPerLine: number;
   includeAccidentals: boolean;
   micDebounceMs: number;
+  repeatNoteBufferMs: number;
 }
 
 // Default tuning (low to high pitch, top to bottom on the oud)
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notesPerLine: 4,
   includeAccidentals: false,
   micDebounceMs: 250,
+  repeatNoteBufferMs: 1000,
 };
 
 const STORAGE_KEY = 'oud-note-trainer-settings';
