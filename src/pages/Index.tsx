@@ -4,6 +4,8 @@ import { MusicStaffCompact } from '@/components/MusicStaffCompact';
 import { OudVisualization } from '@/components/OudVisualization';
 import { OudVisualizationCompact } from '@/components/OudVisualizationCompact';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { MicLevelIndicator } from '@/components/MicLevelIndicator';
+import { InstallPrompt } from '@/components/InstallPrompt';
 import { Settings, loadSettings, saveSettings } from '@/lib/settings';
 import { Note, notesEqual, randomNoteInRange, noteToMidi } from '@/lib/noteUtils';
 import { audioEngine } from '@/lib/audioEngine';
@@ -35,6 +37,8 @@ function Index() {
   const [lastSuccessTime, setLastSuccessTime] = useState<number | null>(null);
   const [lastSuccessNote, setLastSuccessNote] = useState<Note | null>(null);
   const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null);
+  const [micStatus, setMicStatus] = useState<'listening' | 'recovering' | 'error' | 'off'>('off');
+  const [micLevel, setMicLevel] = useState(0);
   
   // Initialize target notes
   useEffect(() => {
@@ -174,10 +178,20 @@ function Index() {
     }
   }, [liveDetectedNote, currentIndex, targetNotes, handleNotePlayed, lastSuccessNote, lastSuccessTime, settings.repeatNoteBufferMs]);
   
+  const onMicStatus = useCallback((status: 'listening' | 'recovering' | 'error', level: number) => {
+    setMicStatus(status);
+    setMicLevel(level);
+    if (status === 'recovering') {
+      toast.info('Mic recovering...', { id: 'mic-recovery' });
+    }
+  }, []);
+
   const toggleListening = async () => {
     if (isListening) {
       stopListening();
       setIsListening(false);
+      setMicStatus('off');
+      setMicLevel(0);
       // Release wake lock
       if (wakeLock) {
         await wakeLock.release();
@@ -187,8 +201,13 @@ function Index() {
       return;
     }
     try {
-      await startListening(onMicNote, { minStableMs: settings.micDebounceMs });
+      await startListening(onMicNote, { 
+        minStableMs: settings.micDebounceMs,
+        onStatus: onMicStatus,
+        autoRecoveryTimeoutMs: 5000
+      });
       setIsListening(true);
+      setMicStatus('listening');
       // Request wake lock to keep screen on
       if ('wakeLock' in navigator) {
         try {
@@ -201,6 +220,7 @@ function Index() {
       }
       toast('Listening...');
     } catch (e) {
+      setMicStatus('error');
       toast.error('Microphone access denied');
     }
   };
@@ -268,6 +288,9 @@ function Index() {
               >
                 {isListening ? <Mic className="h-3 w-3" /> : <MicOff className="h-3 w-3" />}
               </Button>
+              {isListening && (
+                <MicLevelIndicator level={micLevel} status={micStatus} className="hidden sm:flex" />
+              )}
             {liveDetectedNote && (
               <div className={`${targetNotes[currentIndex]?.note && notesEqual(liveDetectedNote, targetNotes[currentIndex].note) ? 'bg-success/20 border border-success text-success animate-note-correct' : 'bg-destructive/20 border border-destructive text-destructive animate-note-shake'} px-2 py-0.5 rounded text-xs`}>
                 {settings.notationSystem === 'solfege' ? (
@@ -333,6 +356,7 @@ function Index() {
               <span className="text-destructive font-medium">✗ {score.incorrect}</span>
             </div>
             
+            <InstallPrompt className="h-10 w-10" />
             <Button 
               variant="outline" 
               size="icon" 
@@ -351,25 +375,28 @@ function Index() {
             >
               {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
             </Button>
-              {liveDetectedNote && (
-                <div className={`${targetNotes[currentIndex]?.note && notesEqual(liveDetectedNote, targetNotes[currentIndex].note) ? 'bg-success/20 border border-success text-success animate-note-correct' : 'bg-destructive/20 border border-destructive text-destructive animate-note-shake'} px-2 py-1 rounded text-sm`}>
-                  {settings.notationSystem === 'solfege' ? (
-                    <span>
-                      {liveDetectedNote.letter === 'C' ? 'Do' :
-                       liveDetectedNote.letter === 'D' ? 'Re' :
-                       liveDetectedNote.letter === 'E' ? 'Mi' :
-                       liveDetectedNote.letter === 'F' ? 'Fa' :
-                       liveDetectedNote.letter === 'G' ? 'Sol' :
-                       liveDetectedNote.letter === 'A' ? 'La' : 'Si'}
-                      {liveDetectedNote.accidental === '#' ? '♯' : liveDetectedNote.accidental === 'b' ? '♭' : ''}{liveDetectedNote.octave}
-                    </span>
-                  ) : (
-                    <span>
-                      {liveDetectedNote.letter}{liveDetectedNote.accidental === '#' ? '♯' : liveDetectedNote.accidental === 'b' ? '♭' : ''}{liveDetectedNote.octave}
-                    </span>
-                  )}
-                </div>
-              )}
+            {isListening && (
+              <MicLevelIndicator level={micLevel} status={micStatus} />
+            )}
+            {liveDetectedNote && (
+              <div className={`${targetNotes[currentIndex]?.note && notesEqual(liveDetectedNote, targetNotes[currentIndex].note) ? 'bg-success/20 border border-success text-success animate-note-correct' : 'bg-destructive/20 border border-destructive text-destructive animate-note-shake'} px-2 py-1 rounded text-sm`}>
+                {settings.notationSystem === 'solfege' ? (
+                  <span>
+                    {liveDetectedNote.letter === 'C' ? 'Do' :
+                     liveDetectedNote.letter === 'D' ? 'Re' :
+                     liveDetectedNote.letter === 'E' ? 'Mi' :
+                     liveDetectedNote.letter === 'F' ? 'Fa' :
+                     liveDetectedNote.letter === 'G' ? 'Sol' :
+                     liveDetectedNote.letter === 'A' ? 'La' : 'Si'}
+                    {liveDetectedNote.accidental === '#' ? '♯' : liveDetectedNote.accidental === 'b' ? '♭' : ''}{liveDetectedNote.octave}
+                  </span>
+                ) : (
+                  <span>
+                    {liveDetectedNote.letter}{liveDetectedNote.accidental === '#' ? '♯' : liveDetectedNote.accidental === 'b' ? '♭' : ''}{liveDetectedNote.octave}
+                  </span>
+                )}
+              </div>
+            )}
             
             <Button variant="outline" size="icon" onClick={toggleMute} className="h-10 w-10">
               {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
