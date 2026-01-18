@@ -5,6 +5,7 @@ type DetectCallback = (note: Note) => void;
 
 let audioContext: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
+let keepAliveGain: GainNode | null = null;
 let mediaStream: MediaStream | null = null;
 let rafId: number | null = null;
 let callbackRef: DetectCallback | null = null;
@@ -58,11 +59,17 @@ function freqToMidi(freq: number): number {
 
 function tick() {
   if (!analyser || !audioContext || !callbackRef) return;
+
+  // On mobile, the AudioContext can get suspended unexpectedly (power saving,
+  // audio focus changes, etc.). If that happens, the analyser stops updating.
+  if (audioContext.state === 'suspended') {
+    void audioContext.resume().catch(() => {});
+  }
+
   const bufferLength = 2048;
   const timeData = new Float32Array(bufferLength);
   analyser.getFloatTimeDomainData(timeData);
   const now = performance.now();
-  
   let rms = 0;
   for (let i = 0; i < bufferLength; i++) rms += timeData[i] * timeData[i];
   rms = Math.sqrt(rms / bufferLength);
@@ -106,6 +113,21 @@ export async function startListening(cb: DetectCallback, opts?: { minStableMs?: 
   analyser = audioContext.createAnalyser();
   analyser.fftSize = 2048;
   src.connect(analyser);
+
+  // Keep the graph alive on mobile by routing to destination through a silent gain.
+  // Some browsers stop processing nodes that aren't connected to an output.
+  if (keepAliveGain) {
+    try {
+      keepAliveGain.disconnect();
+    } catch {
+      // ignore
+    }
+  }
+  keepAliveGain = audioContext.createGain();
+  keepAliveGain.gain.value = 0;
+  analyser.connect(keepAliveGain);
+  keepAliveGain.connect(audioContext.destination);
+
   if (audioContext.state === 'suspended') await audioContext.resume();
   lastEmittedMidi = null;
   candidateMidi = null;
@@ -130,6 +152,10 @@ export function stopListening(): void {
   if (analyser) {
     analyser.disconnect();
     analyser = null;
+  }
+  if (keepAliveGain) {
+    keepAliveGain.disconnect();
+    keepAliveGain = null;
   }
   callbackRef = null;
   lastEmittedMidi = null;
