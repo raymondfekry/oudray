@@ -136,22 +136,37 @@ export function notesEqual(a: Note, b: Note): boolean {
 
 // Generate a random note within a range (inclusive)
 // If includeAccidentals is false, only return natural notes (no sharps/flats)
-export function randomNoteInRange(lowNote: Note, highNote: Note, includeAccidentals: boolean = true): Note {
+// If avoidRepetition is true and previousNote is provided, avoid returning the same note
+export function randomNoteInRange(
+  lowNote: Note, 
+  highNote: Note, 
+  includeAccidentals: boolean = true,
+  avoidRepetition: boolean = false,
+  previousNote?: Note
+): Note {
   const lowMidi = noteToMidi(lowNote);
   const highMidi = noteToMidi(highNote);
   
+  let candidateNotes: Note[];
+  
   if (includeAccidentals) {
-    const randomMidi = lowMidi + Math.floor(Math.random() * (highMidi - lowMidi + 1));
-    return midiToNote(randomMidi);
+    candidateNotes = getNotesInRange(lowNote, highNote);
   } else {
     // Only natural notes
-    const naturalNotes = getNotesInRange(lowNote, highNote).filter(n => n.accidental === '');
-    if (naturalNotes.length === 0) {
-      // Fallback if no natural notes in range
-      return midiToNote(lowMidi);
-    }
-    return naturalNotes[Math.floor(Math.random() * naturalNotes.length)];
+    candidateNotes = getNotesInRange(lowNote, highNote).filter(n => n.accidental === '');
   }
+  
+  if (candidateNotes.length === 0) {
+    // Fallback if no notes in range
+    return midiToNote(lowMidi);
+  }
+  
+  // If avoidRepetition is true and we have a previous note and more than 1 candidate
+  if (avoidRepetition && previousNote && candidateNotes.length > 1) {
+    candidateNotes = candidateNotes.filter(n => !notesEqual(n, previousNote));
+  }
+  
+  return candidateNotes[Math.floor(Math.random() * candidateNotes.length)];
 }
 
 // Get all notes in range
