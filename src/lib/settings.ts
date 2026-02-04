@@ -15,6 +15,7 @@ export interface Settings {
   highestNote: Note;
   notesPerLine: number;
   includeAccidentals: boolean;
+  avoidRepetition: boolean;
   micDebounceMs: number;
   repeatNoteBufferMs: number;
 }
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   highestNote: { letter: 'G', accidental: '', octave: 4 },
   notesPerLine: 4,
   includeAccidentals: false,
+  avoidRepetition: true,
   micDebounceMs: 250,
   repeatNoteBufferMs: 1000,
 };

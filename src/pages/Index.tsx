@@ -52,16 +52,25 @@ function Index() {
   
   const generateNewNotes = useCallback(() => {
     const notes: TargetNote[] = [];
+    let prevNote: Note | undefined = undefined;
     for (let i = 0; i < settings.notesPerLine; i++) {
+      const newNote = randomNoteInRange(
+        settings.lowestNote, 
+        settings.highestNote, 
+        settings.includeAccidentals,
+        settings.avoidRepetition,
+        prevNote
+      );
       notes.push({
-        note: randomNoteInRange(settings.lowestNote, settings.highestNote, settings.includeAccidentals),
+        note: newNote,
         status: 'pending',
         uid: Math.random().toString(36).slice(2) + Date.now().toString(36),
       });
+      prevNote = newNote;
     }
     setTargetNotes(notes);
     setCurrentIndex(0);
-  }, [settings.notesPerLine, settings.lowestNote, settings.highestNote, settings.includeAccidentals]);
+  }, [settings.notesPerLine, settings.lowestNote, settings.highestNote, settings.includeAccidentals, settings.avoidRepetition]);
   
   const handleNotePlayed = useCallback((playedNote: Note) => {
     if (currentIndex >= targetNotes.length) return;
@@ -85,8 +94,15 @@ function Index() {
       setTimeout(() => {
         setTargetNotes(prev => {
           const remaining = prev.slice(1);
+          const lastNote = remaining.length > 0 ? remaining[remaining.length - 1].note : undefined;
           const newNote: TargetNote = {
-            note: randomNoteInRange(settings.lowestNote, settings.highestNote, settings.includeAccidentals),
+            note: randomNoteInRange(
+              settings.lowestNote, 
+              settings.highestNote, 
+              settings.includeAccidentals,
+              settings.avoidRepetition,
+              lastNote
+            ),
             status: 'pending',
             isNew: true,
             uid: Math.random().toString(36).slice(2) + Date.now().toString(36),

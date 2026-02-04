@@ -261,6 +261,19 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
             />
           </div>
           
+          {/* Avoid Repetition */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="avoid-repetition-switch">Avoid Consecutive Repeats</Label>
+              <p className="text-sm text-muted-foreground">Don't show the same note twice in a row</p>
+            </div>
+            <Switch
+              id="avoid-repetition-switch"
+              checked={settings.avoidRepetition}
+              onCheckedChange={(checked) => onSettingsChange({ ...settings, avoidRepetition: checked })}
+            />
+          </div>
+          
           {/* Mic Debounce */}
           <div className="space-y-2">
             <Label>Mic Debounce (ms)</Label>
